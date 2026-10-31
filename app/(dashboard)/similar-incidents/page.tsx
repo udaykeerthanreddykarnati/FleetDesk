@@ -1,0 +1,2 @@
+import { SimilarIncidentSearch } from '../similar-incidents';
+export default function SimilarIncidentsPage(){return <div className="space-y-6"><div><p className="text-sm font-semibold uppercase tracking-wider text-emerald-700">Semantic search</p><h1 className="mt-1 text-3xl font-bold">Similar incidents</h1><p className="mt-2 text-sm text-slate-500">Find past operational events that describe the same kind of problem.</p></div><SimilarIncidentSearch/></div>;}
