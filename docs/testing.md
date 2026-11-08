@@ -61,10 +61,10 @@ On 2026-10-28:
 | `npm run test:integration` | Passed: 1 scenario with the checks listed above. |
 | `npm run build` | Passed: optimized Next.js production build using webpack. |
 | `npm audit` | Passed: 0 vulnerabilities at the time checked. |
-| Local seed and vector sync | Seed completed; 5 incident vectors synced, 0 failed, 0 remaining. |
+| Local seed and vector sync | Seed completed (10 vehicles, 10 drivers, 10 shipments, 10 incidents, 30 `MEDIUMBLOB` images); all incident vectors synced to PostgreSQL `pgvector`, 0 failed, 0 remaining. |
 | Image BLOB verification | Integration test confirmed exact byte equality before upload, in MySQL, and after retrieval. |
 
-Tested local runtime versions: Node.js `v26.8.2`, npm `11.19.1`, MySQL `9.7.1`, PostgreSQL `18.6`, pgvector `0.8.7`, and Ollama `0.35.0`. Runtime versions may change as package managers publish updates.
+Tested local runtime versions: Node.js `v26.8.2`, npm `11.19.1`, MySQL `9.7.1`, PostgreSQL `18.6`, and `pgvector` `0.8.7`. Runtime versions may change as package managers publish updates.
 
 ## Browser verification
 

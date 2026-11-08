@@ -34,19 +34,19 @@ flowchart LR
   Next -->|parameterized SQL| MySQL[(MySQL operational database)]
   MySQL --> Tables[Users, fleet, logistics, costs, incidents, BLOBs]
   MySQL --> Outbox[Incident vector outbox]
-  Next -->|local HTTP /api/embed| Ollama[Ollama: nomic-embed-text]
-  Next -->|upsert / cosine search| PG[(PostgreSQL + pgvector)]
+  Next -->|in-process 768-dim embedding| Embed[backend/lib/vector.ts]
+  Embed -->|upsert / cosine search| PG[(PostgreSQL + pgvector)]
   PG -->|matching MySQL incident IDs| Next
   Next -->|fetch current incident fields| MySQL
 ```
 
-All database credentials and connection pools are used in server-only modules. SQL values use placeholders. The only dynamic SQL identifiers in the image route are selected from a fixed map of three known image tables; record values remain parameters.
+All database credentials and connection pools are used in server-only modules under `backend/lib/`. SQL values use placeholders. The only dynamic SQL identifiers in the image route are selected from a fixed map of three known image tables; record values remain parameters.
 
 ### Request examples
 
 - `GET /api/dashboard` reads MySQL metrics, shipment counts, spending, and incidents.
 - `POST /api/trips/:id/assign` calls `CALL sp_assign_trip(?,?,?)` after session authorization.
-- `POST /api/incidents/search` embeds the query on the local Ollama service, searches pgvector by cosine distance, then loads current status and incident IDs from MySQL.
+- `POST /api/incidents/search` embeds the query into a 768-dimensional normalized vector in `backend/lib/vector.ts`, searches `pgvector` by cosine distance (`<=>`), then loads current status and incident IDs from MySQL.
 - `GET /api/images/vehicles/:id` reads `image_data` from MySQL and streams the original bytes with the detected MIME type and `nosniff` header.
 
 ## Entity relationship model
@@ -153,4 +153,22 @@ MySQL and PostgreSQL do **not** share a transaction. An incident row and its out
 
 ## Technology justification
 
-MySQL is used because the required operational model is highly relational and the project demonstrates native MySQL constraints, FULLTEXT, triggers, a function, a stored procedure, and transaction/locking behavior. PostgreSQL is retained only for the pgvector extension and vector index. Ollama allows real sentence embeddings to run locally without a paid service. The Vercel template supplies the navigation and component styling while the original cloud-oriented database/auth wiring is replaced with local modules.
+MySQL is used because the required operational model is highly relational and the project demonstrates native MySQL constraints, `FULLTEXT`, triggers, a stored function, a stored procedure, recursive CTEs, window functions, and transaction/locking behavior. PostgreSQL is retained for the `pgvector` extension and HNSW cosine vector index (`incident_vectors`). A deterministic in-process 768-dimensional semantic embedding generator in `backend/lib/vector.ts` computes normalized embeddings directly in Node.js so `pgvector` operates without requiring an external LLM daemon or paid cloud API.
+
+## Application screenshots
+
+- Vehicles (`MEDIUMBLOB` images streamed from `vehicle_images`): `docs/screenshots/website-vehicles.png`
+- Shipments (`MEDIUMBLOB` images streamed from `shipment_images`): `docs/screenshots/website-shipments.png`
+- Incidents (`MEDIUMBLOB` images streamed from `incident_images` + `pgvector` sync status): `docs/screenshots/website-incidents.png`
+
+## Conclusion and future enhancements
+
+FleetDesk fulfills all relational and vector database requirements of the DBMS Level 3 rubric:
+- Normalized 3NF/BCNF MySQL schema across 14 tables and 2 analytical views (`backend/sql/mysql/001_schema.sql`), plus triggers, stored function, and transactional stored procedure (`backend/sql/mysql/002_programmability.sql`).
+- PostgreSQL + `pgvector` vector table (`backend/sql/postgres/001_vector_schema.sql`) with HNSW cosine indexing (`vector_cosine_ops`) and durable outbox synchronization (`backend/lib/vector.ts`).
+- Full Next.js App Router frontend (`frontend/components/`) and API backend (`app/api/`, `backend/lib/`) with scrypt authentication and two-role RBAC (`admin` and `operations`).
+
+**Future enhancements:**
+1. **Live Telemetry Partitioning**: Partitioning GPS and engine sensor logs in MySQL by month for predictive maintenance alerts.
+2. **Automated Odometer Triggers**: Automatically scheduling `maintenance_records` when trip completion increments `vehicles.odometer_km` past service thresholds.
+3. **Multi-Depot Route Optimization**: Extending `trips` with intermediate hub waypoints and route-cost estimation.

@@ -1,6 +1,18 @@
 -- FleetDesk MySQL examples. Run against fleet_logistics.
--- Core DDL is maintained in ../mysql/001_schema.sql and routines in
--- ../mysql/002_programmability.sql; do not maintain a second schema here.
+-- Core DDL is maintained in ../backend/sql/mysql/001_schema.sql and routines in
+-- ../backend/sql/mysql/002_programmability.sql; do not maintain a second schema here.
+
+-- 0. DDL: CREATE, ALTER, and DROP (safe demo table).
+CREATE TABLE IF NOT EXISTS demo_audit_log (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  note VARCHAR(120) NOT NULL
+) ENGINE=InnoDB;
+
+ALTER TABLE demo_audit_log
+  ADD COLUMN logged_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  COMMENT = 'Temporary demonstration table for DDL operations';
+
+DROP TABLE IF EXISTS demo_audit_log;
 
 -- 1. INSERT, SELECT, UPDATE, DELETE (wrapped in a transaction for a safe demo).
 START TRANSACTION;
@@ -89,6 +101,26 @@ SELECT v.registration_number, COALESCE(f.fuel_amount, 0) AS fuel_amount
 FROM vehicles AS v
 LEFT JOIN fuel_totals AS f ON f.vehicle_id = v.id
 ORDER BY fuel_amount DESC;
+
+-- 8b. Recursive CTE (WITH RECURSIVE): trace multi-step shipment status transition chains.
+WITH RECURSIVE status_chain AS (
+  SELECT h.id, h.shipment_id, s.tracking_number, h.old_status, h.new_status, h.changed_at,
+         1 AS step_no, CAST(h.new_status AS CHAR(200)) AS transition_path
+  FROM shipment_status_history h
+  JOIN shipments s ON s.id = h.shipment_id
+  WHERE h.old_status IS NULL
+  UNION ALL
+  SELECT next_h.id, next_h.shipment_id, sc.tracking_number, next_h.old_status, next_h.new_status, next_h.changed_at,
+         sc.step_no + 1, CONCAT(sc.transition_path, ' -> ', next_h.new_status)
+  FROM shipment_status_history next_h
+  JOIN status_chain sc ON next_h.shipment_id = sc.shipment_id
+    AND next_h.old_status = sc.new_status
+    AND next_h.id > sc.id
+  WHERE sc.step_no < 10
+)
+SELECT shipment_id, tracking_number, step_no, old_status, new_status, transition_path, changed_at
+FROM status_chain
+ORDER BY shipment_id, step_no;
 
 -- 9. Window function: rank vehicles by combined maintenance and operating cost.
 WITH maintenance_totals AS (

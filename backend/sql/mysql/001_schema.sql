@@ -216,6 +216,11 @@ CREATE TABLE IF NOT EXISTS incident_vector_jobs (
   INDEX idx_vector_jobs_incident (incident_id, id)
 ) ENGINE=InnoDB;
 
+-- Demonstrate ALTER TABLE DDL on operational relations.
+ALTER TABLE vehicles COMMENT = 'Fleet vehicles and capacity specifications';
+ALTER TABLE shipments COMMENT = 'Customer cargo shipments tracked across trips';
+ALTER TABLE incidents COMMENT = 'Operational incidents synchronized to pgvector';
+
 CREATE OR REPLACE VIEW v_monthly_expense_totals AS
 SELECT DATE_FORMAT(incurred_at, '%Y-%m') AS month,
        category,

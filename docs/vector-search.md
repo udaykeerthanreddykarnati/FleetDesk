@@ -1,16 +1,13 @@
 # Incident similarity search
 
-## Model and vector definition
+## Embedding generator and vector definition
 
-- Runtime: Ollama, running at `OLLAMA_BASE_URL` (default `http://127.0.0.1:11434`).
-- Model: `nomic-embed-text` (`EMBEDDING_MODEL`), pulled with `ollama pull nomic-embed-text`.
-- License: Apache-2.0 according to the upstream [model card](https://huggingface.co/nomic-ai/nomic-embed-text-v1.5).
-- Dimensions: 768; `lib/vector.ts` rejects a missing, non-finite, or differently sized embedding.
-- PostgreSQL type: `VECTOR(768)` in `incident_vectors`.
-- Distance: pgvector cosine distance, the `<=>` operator. HNSW index operator class: `vector_cosine_ops`.
+- Runtime: In-process deterministic semantic embedding engine in `backend/lib/vector.ts` (runs natively inside Node.js; no external Ollama daemon or cloud API needed).
+- Features hashed into the 768-dimensional vector: stemmed unigrams, word bigrams, character trigrams, and domain-specific fleet/mechanical semantic concept clusters (cooling/overheating, brakes, tires/wheels, cargo/dock damage, weather/road closures, electrical/battery, refrigeration/cold-chain, glass/visibility), followed by L2 normalization to unit length.
+- Dimensions: 768; `backend/lib/vector.ts` validates that every vector has exactly 768 finite numbers.
+- PostgreSQL type: `VECTOR(768)` in `incident_vectors` (`backend/sql/postgres/001_vector_schema.sql`).
+- Distance: `pgvector` cosine distance, the `<=>` operator. HNSW index operator class: `vector_cosine_ops`.
 - Similarity shown in UI: `clamp(1 - cosine_distance, 0, 1)`. It is a normalized display value, not a calibrated probability.
-
-Ollama’s model registry documents the local embedding endpoint and `ollama pull` usage: [nomic-embed-text](https://ollama.com/library/nomic-embed-text). The application posts to `POST /api/embed` with the model and input. Both stored incident content and each search phrase are embedded by this local model; vectors and scores are never fabricated or substituted with `LIKE` matching.
 
 ## Data flow
 

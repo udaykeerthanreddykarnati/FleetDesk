@@ -9,7 +9,6 @@
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "test": "vitest run",
-    "model:pull": "ollama pull nomic-embed-text",
     "db:seed": "node --env-file=.env.local --conditions=react-server --import tsx backend/scripts/seed.ts",
     "db:sync-vectors": "node --env-file=.env.local --conditions=react-server --import tsx backend/scripts/sync-vectors.ts",
     "admin:create": "node --env-file=.env.local --conditions=react-server --import tsx backend/scripts/create-admin.ts",

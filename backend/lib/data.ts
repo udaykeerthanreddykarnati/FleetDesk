@@ -115,5 +115,26 @@ export async function reportData() {
      FROM incidents i LEFT JOIN incident_images im ON im.incident_id=i.id
      GROUP BY i.id ORDER BY i.occurred_at DESC LIMIT 20`
   );
-  return { monthly, vehicleCosts, delayedShipments, incidentText };
+  const statusChains = await query<Record<string, unknown>[]>(
+    `WITH RECURSIVE status_chain AS (
+       SELECT h.id, h.shipment_id, s.tracking_number, h.old_status, h.new_status, h.changed_at,
+              1 AS step_no, CAST(h.new_status AS CHAR(200)) AS transition_path
+       FROM shipment_status_history h
+       JOIN shipments s ON s.id = h.shipment_id
+       WHERE h.old_status IS NULL
+       UNION ALL
+       SELECT next_h.id, next_h.shipment_id, sc.tracking_number, next_h.old_status, next_h.new_status, next_h.changed_at,
+              sc.step_no + 1, CONCAT(sc.transition_path, ' -> ', next_h.new_status)
+       FROM shipment_status_history next_h
+       JOIN status_chain sc ON next_h.shipment_id = sc.shipment_id
+         AND next_h.old_status = sc.new_status
+         AND next_h.id > sc.id
+       WHERE sc.step_no < 10
+     )
+     SELECT id, shipment_id, tracking_number, step_no, transition_path, changed_at
+     FROM status_chain
+     ORDER BY shipment_id, step_no
+     LIMIT 30`
+  );
+  return { monthly, vehicleCosts, delayedShipments, incidentText, statusChains };
 }
