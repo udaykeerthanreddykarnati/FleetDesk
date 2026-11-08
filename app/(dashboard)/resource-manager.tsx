@@ -16,7 +16,7 @@ type Props={title:string;description:string;endpoint:string;fields:FormField[];c
 
 function display(value:unknown) {
   if (value===null||value===undefined||value==='') return '—';
-  if (value instanceof Date) return value.toLocaleString();
+  if (value instanceof Date) return value.toISOString().replace('T',' ').slice(0,19);
   if (typeof value==='boolean') return value?'Yes':'No';
   return String(value).replaceAll('_',' ');
 }

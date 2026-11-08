@@ -37,13 +37,16 @@ export async function driverRows() {
 export async function shipmentRows(search = '') {
   if (search.trim()) {
     return query<Record<string, unknown>[]>(
-      `SELECT id,tracking_number,customer_name,description,origin,destination,weight_kg,status,expected_delivery,delivered_at,created_at
-       FROM shipments WHERE MATCH(description,customer_name,origin,destination) AGAINST (? IN NATURAL LANGUAGE MODE)
-       ORDER BY created_at DESC LIMIT 100`, [search.trim()]
+      `SELECT s.id,s.tracking_number,s.customer_name,s.description,s.origin,s.destination,s.weight_kg,s.status,s.expected_delivery,s.delivered_at,s.created_at,
+        (SELECT COUNT(*) FROM shipment_images im WHERE im.shipment_id=s.id) AS has_image
+       FROM shipments s WHERE MATCH(s.description,s.customer_name,s.origin,s.destination) AGAINST (? IN NATURAL LANGUAGE MODE)
+       ORDER BY s.created_at DESC LIMIT 100`, [search.trim()]
     );
   }
   return query<Record<string, unknown>[]>(
-    'SELECT id,tracking_number,customer_name,description,origin,destination,weight_kg,status,expected_delivery,delivered_at,created_at FROM shipments ORDER BY created_at DESC LIMIT 100'
+    `SELECT s.id,s.tracking_number,s.customer_name,s.description,s.origin,s.destination,s.weight_kg,s.status,s.expected_delivery,s.delivered_at,s.created_at,
+      (SELECT COUNT(*) FROM shipment_images im WHERE im.shipment_id=s.id) AS has_image
+     FROM shipments s ORDER BY s.created_at DESC LIMIT 100`
   );
 }
 
@@ -76,7 +79,8 @@ export async function expenseRows() {
 export async function incidentRows() {
   return query<Record<string, unknown>[]>(
     `SELECT i.id,i.summary,i.description,i.severity,i.incident_status,i.occurred_at,i.embedding_status,i.embedding_error,
-      v.registration_number,d.full_name AS driver_name
+      v.registration_number,d.full_name AS driver_name,
+      (SELECT COUNT(*) FROM incident_images im WHERE im.incident_id=i.id) AS has_image
      FROM incidents i LEFT JOIN vehicles v ON v.id=i.vehicle_id LEFT JOIN drivers d ON d.id=i.driver_id
      ORDER BY i.occurred_at DESC LIMIT 100`
   );
@@ -87,13 +91,17 @@ export async function reportData() {
     `SELECT * FROM v_monthly_expense_totals ORDER BY month DESC, category LIMIT 36`
   );
   const vehicleCosts = await query<Record<string, unknown>[]>(
-    `SELECT v.id,v.registration_number,v.vehicle_type,
-      COALESCE(m.maintenance_total,0) AS maintenance_total,
-      fn_vehicle_expense_total(v.id) AS expense_total,
-      RANK() OVER (ORDER BY COALESCE(m.maintenance_total,0)+fn_vehicle_expense_total(v.id) DESC) AS cost_rank
-     FROM vehicles v LEFT JOIN (
-       SELECT vehicle_id,SUM(cost) AS maintenance_total FROM maintenance_records GROUP BY vehicle_id
-     ) m ON m.vehicle_id=v.id ORDER BY cost_rank,v.registration_number`
+    `SELECT id,registration_number,vehicle_type,maintenance_total,expense_total,
+      RANK() OVER (ORDER BY (maintenance_total + expense_total) DESC) AS cost_rank
+     FROM (
+       SELECT v.id,v.registration_number,v.vehicle_type,
+         COALESCE(m.maintenance_total,0) AS maintenance_total,
+         fn_vehicle_expense_total(v.id) AS expense_total
+       FROM vehicles v LEFT JOIN (
+         SELECT vehicle_id,SUM(cost) AS maintenance_total FROM maintenance_records GROUP BY vehicle_id
+       ) m ON m.vehicle_id=v.id
+     ) vehicle_totals
+     ORDER BY cost_rank,registration_number`
   );
   const delayedShipments = await query<Record<string, unknown>[]>(
     `SELECT s.id,s.tracking_number,s.customer_name,s.origin,s.destination,s.expected_delivery,s.status

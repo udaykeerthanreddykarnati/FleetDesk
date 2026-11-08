@@ -37,6 +37,7 @@ END$$
 DROP FUNCTION IF EXISTS fn_vehicle_expense_total$$
 CREATE FUNCTION fn_vehicle_expense_total(p_vehicle_id BIGINT UNSIGNED)
 RETURNS DECIMAL(14,2)
+DETERMINISTIC
 READS SQL DATA
 BEGIN
   DECLARE result_total DECIMAL(14,2);
