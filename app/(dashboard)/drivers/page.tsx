@@ -1,6 +1,6 @@
 import { currentUser } from '@/lib/auth';
 import { driverRows } from '@/lib/data';
-import { ResourceManager, type FormField, type TableColumn } from '../resource-manager';
+import { ResourceManager, type FormField, type TableColumn } from '@/frontend/components/resource-manager';
 export const dynamic='force-dynamic';
 const fields:FormField[]=[
   {name:'full_name',label:'Driver name'}, {name:'license_number',label:'License number'}, {name:'phone',label:'Phone'},

@@ -10,9 +10,9 @@
     "lint": "eslint .",
     "test": "vitest run",
     "model:pull": "ollama pull nomic-embed-text",
-    "db:seed": "node --env-file=.env.local --conditions=react-server --import tsx scripts/seed.ts",
-    "db:sync-vectors": "node --env-file=.env.local --conditions=react-server --import tsx scripts/sync-vectors.ts",
-    "admin:create": "node --env-file=.env.local --conditions=react-server --import tsx scripts/create-admin.ts",
+    "db:seed": "node --env-file=.env.local --conditions=react-server --import tsx backend/scripts/seed.ts",
+    "db:sync-vectors": "node --env-file=.env.local --conditions=react-server --import tsx backend/scripts/sync-vectors.ts",
+    "admin:create": "node --env-file=.env.local --conditions=react-server --import tsx backend/scripts/create-admin.ts",
     "test:integration": "node --env-file=.env.local --conditions=react-server ./node_modules/vitest/vitest.mjs run --config vitest.integration.config.mts"
   },
   "dependencies": {

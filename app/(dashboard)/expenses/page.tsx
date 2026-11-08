@@ -1,7 +1,7 @@
 import { currentUser } from '@/lib/auth';
 import { expenseRows } from '@/lib/data';
 import { query } from '@/lib/db';
-import { ResourceManager, type FormField, type TableColumn } from '../resource-manager';
+import { ResourceManager, type FormField, type TableColumn } from '@/frontend/components/resource-manager';
 export const dynamic='force-dynamic';
 const columns:TableColumn[]=[{key:'incurred_at',label:'Date'},{key:'category',label:'Category'},{key:'vendor',label:'Vendor'},{key:'registration_number',label:'Vehicle'},{key:'trip_code',label:'Trip'},{key:'description',label:'Description'},{key:'quantity',label:'Quantity'},{key:'amount',label:'Amount ₹'}];
 export default async function ExpensesPage(){

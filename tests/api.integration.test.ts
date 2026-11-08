@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { pool } from '../lib/db';
+import { pool } from '../backend/lib/db';
 
 const base=process.env.API_BASE_URL||'http://127.0.0.1:3000';
 const adminEmail=process.env.TEST_ADMIN_EMAIL;

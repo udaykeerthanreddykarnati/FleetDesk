@@ -1,7 +1,7 @@
 import { currentUser } from '@/lib/auth';
 import { shipmentRows } from '@/lib/data';
-import { ResourceManager, type FormField, type TableColumn } from '../resource-manager';
-import { ShipmentSearch } from './search';
+import { ResourceManager, type FormField, type TableColumn } from '@/frontend/components/resource-manager';
+import { ShipmentSearch } from '@/frontend/components/shipment-search';
 export const dynamic='force-dynamic';
 const fields:FormField[]=[
   {name:'tracking_number',label:'Tracking number',placeholder:'FL-2026-1006'}, {name:'customer_name',label:'Customer'},

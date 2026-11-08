@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
-cd "$(dirname "$0")/.."
+cd "$(dirname "$0")/../.."
 if [[ ! -f .env.local ]]; then
   MYSQL_PASSWORD="$(openssl rand -hex 24)"
   PG_VECTOR_PASSWORD="$(openssl rand -hex 24)"
@@ -19,6 +19,6 @@ EMBEDDING_MODEL=nomic-embed-text
 ENV
   chmod 600 .env.local
 fi
-./scripts/start-local-databases.sh
-./scripts/init-databases.sh
+./backend/scripts/start-local-databases.sh
+./backend/scripts/init-databases.sh
 echo "Initial local setup is complete. Next run: npm run db:seed"

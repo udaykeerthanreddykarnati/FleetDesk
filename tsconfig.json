@@ -20,11 +20,18 @@
     "incremental": true,
     "baseUrl": ".",
     "paths": {
+      "@/frontend/*": [
+        "frontend/*"
+      ],
+      "@/backend/*": [
+        "backend/*"
+      ],
       "@/components/*": [
-        "components/*"
+        "frontend/components/*"
       ],
       "@/lib/*": [
-        "lib/*"
+        "backend/lib/*",
+        "frontend/lib/*"
       ]
     },
     "plugins": [

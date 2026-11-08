@@ -1,10 +1,10 @@
 import { describe,it,expect } from 'vitest';
-import { driverSchema, incidentSchema, shipmentSchema, tripSchema, vehicleSchema } from '../lib/validation';
-import { hashPassword, verifyPassword } from '../lib/password';
-import { imageMimeFromBytes, MAX_IMAGE_BYTES, safeImageFilename } from '../lib/image-validation';
-import { canTransitionShipment, canTransitionTrip } from '../lib/rules';
-import { mergeVectorMatches } from '../lib/vector-results';
-import { toMysqlUtcDateTime } from '../lib/mysql-date';
+import { driverSchema, incidentSchema, shipmentSchema, tripSchema, vehicleSchema } from '../backend/lib/validation';
+import { hashPassword, verifyPassword } from '../backend/lib/password';
+import { imageMimeFromBytes, MAX_IMAGE_BYTES, safeImageFilename } from '../backend/lib/image-validation';
+import { canTransitionShipment, canTransitionTrip } from '../backend/lib/rules';
+import { mergeVectorMatches } from '../backend/lib/vector-results';
+import { toMysqlUtcDateTime } from '../backend/lib/mysql-date';
 
 describe('fleet data validation',()=>{
   it('normalizes vehicle registration and rejects invalid capacities',()=>{

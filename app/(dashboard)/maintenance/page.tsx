@@ -1,7 +1,7 @@
 import { currentUser } from '@/lib/auth';
 import { maintenanceRows } from '@/lib/data';
 import { query } from '@/lib/db';
-import { ResourceManager, type FormField, type TableColumn } from '../resource-manager';
+import { ResourceManager, type FormField, type TableColumn } from '@/frontend/components/resource-manager';
 export const dynamic='force-dynamic';
 const columns:TableColumn[]=[{key:'service_date',label:'Service date'},{key:'registration_number',label:'Vehicle'},{key:'service_type',label:'Service'},{key:'notes',label:'Notes'},{key:'cost',label:'Cost ₹'},{key:'odometer_km',label:'Odometer km'}];
 export default async function MaintenancePage(){

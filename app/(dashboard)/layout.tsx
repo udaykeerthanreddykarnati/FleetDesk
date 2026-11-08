@@ -1,8 +1,8 @@
 import Link from 'next/link';
 import { AlertTriangle, BarChart3, CircleDollarSign, Home, Package, Route, Search, Settings, Truck, Users, Wrench } from 'lucide-react';
-import Providers from './providers';
-import { NavItem } from './nav-item';
-import { UserMenu } from './user';
+import Providers from '@/frontend/components/providers';
+import { NavItem } from '@/frontend/components/nav-item';
+import { UserMenu } from '@/frontend/components/user';
 import { requirePageUser } from '@/lib/auth';
 
 const navigation = [

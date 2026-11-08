@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation';
 import { Truck } from 'lucide-react';
 import { currentUser } from '@/lib/auth';
-import { LoginForm } from './login-form';
+import { LoginForm } from '@/frontend/components/login-form';
 
 export default async function LoginPage() {
   if (await currentUser()) redirect('/');

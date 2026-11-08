@@ -1,8 +1,8 @@
 import { currentUser } from '@/lib/auth';
 import { incidentRows } from '@/lib/data';
 import { query } from '@/lib/db';
-import { ResourceManager, type FormField, type TableColumn } from '../resource-manager';
-import { SimilarIncidentSearch, VectorSyncButton } from '../similar-incidents';
+import { ResourceManager, type FormField, type TableColumn } from '@/frontend/components/resource-manager';
+import { SimilarIncidentSearch, VectorSyncButton } from '@/frontend/components/similar-incidents';
 export const dynamic='force-dynamic';
 const columns:TableColumn[]=[{key:'summary',label:'Incident'},{key:'severity',label:'Severity'},{key:'incident_status',label:'Status'},{key:'registration_number',label:'Vehicle'},{key:'driver_name',label:'Driver'},{key:'occurred_at',label:'Occurred'},{key:'embedding_status',label:'Vector sync'}];
 export default async function IncidentsPage(){

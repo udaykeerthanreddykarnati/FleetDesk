@@ -1,6 +1,6 @@
 import { currentUser } from '@/lib/auth';
 import { vehicleRows } from '@/lib/data';
-import { ResourceManager, type FormField, type TableColumn } from '../resource-manager';
+import { ResourceManager, type FormField, type TableColumn } from '@/frontend/components/resource-manager';
 export const dynamic='force-dynamic';
 const fields:FormField[]=[
   {name:'registration_number',label:'Registration number',placeholder:'KA-01-AB-1234'},

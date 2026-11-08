@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
-cd "$(dirname "$0")/.."
-if [[ ! -f .env.local ]]; then echo "Missing .env.local. Run ./scripts/setup-local.sh first."; exit 1; fi
+cd "$(dirname "$0")/../.."
+if [[ ! -f .env.local ]]; then echo "Missing .env.local. Run ./backend/scripts/setup-local.sh first."; exit 1; fi
 set -a
 source .env.local
 set +a

@@ -1,7 +1,7 @@
 import { currentUser } from '@/lib/auth';
 import { tripRows } from '@/lib/data';
 import { query } from '@/lib/db';
-import { ResourceManager, type FormField, type TableColumn, type FieldOption } from '../resource-manager';
+import { ResourceManager, type FormField, type TableColumn, type FieldOption } from '@/frontend/components/resource-manager';
 export const dynamic='force-dynamic';
 const fields:FormField[]=[
   {name:'trip_code',label:'Trip code',placeholder:'TRIP-2604'}, {name:'start_location',label:'Start location'},
