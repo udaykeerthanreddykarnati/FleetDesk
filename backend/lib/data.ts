@@ -2,21 +2,21 @@ import 'server-only';
 import { query } from '@/lib/db';
 
 export async function dashboardData() {
-  const [metrics] = await query<Record<string, number>[]>(
-    'SELECT * FROM v_fleet_dashboard'
-  );
-  const shipmentStatuses = await query<{ status: string; total: number }[]>(
-    'SELECT status, COUNT(*) AS total FROM shipments GROUP BY status ORDER BY status'
-  );
-  const recentIncidents = await query<{ id: number; summary: string; severity: string; incident_status: string; occurred_at: Date; vehicle: string | null }[]>(
-    `SELECT i.id,i.summary,i.severity,i.incident_status,i.occurred_at,v.registration_number AS vehicle
-     FROM incidents i LEFT JOIN vehicles v ON v.id=i.vehicle_id
-     ORDER BY i.occurred_at DESC LIMIT 6`
-  );
-  const monthlySpend = await query<{ category: string; amount: number }[]>(
-    `SELECT category, COALESCE(SUM(amount),0) AS amount FROM expenses
-     WHERE incurred_at >= DATE_SUB(CURRENT_DATE, INTERVAL 30 DAY) GROUP BY category ORDER BY category`
-  );
+  const [[metrics], shipmentStatuses, recentIncidents, monthlySpend] = await Promise.all([
+    query<Record<string, number>[]>('SELECT * FROM v_fleet_dashboard'),
+    query<{ status: string; total: number }[]>(
+      'SELECT status, COUNT(*) AS total FROM shipments GROUP BY status ORDER BY status'
+    ),
+    query<{ id: number; summary: string; severity: string; incident_status: string; occurred_at: Date; vehicle: string | null }[]>(
+      `SELECT i.id,i.summary,i.severity,i.incident_status,i.occurred_at,v.registration_number AS vehicle
+       FROM incidents i LEFT JOIN vehicles v ON v.id=i.vehicle_id
+       ORDER BY i.occurred_at DESC LIMIT 6`
+    ),
+    query<{ category: string; amount: number }[]>(
+      `SELECT category, COALESCE(SUM(amount),0) AS amount FROM expenses
+       WHERE incurred_at >= DATE_SUB(CURRENT_DATE, INTERVAL 30 DAY) GROUP BY category ORDER BY category`
+    )
+  ]);
   return { metrics: metrics ?? {}, shipmentStatuses, recentIncidents, monthlySpend };
 }
 
@@ -87,54 +87,56 @@ export async function incidentRows() {
 }
 
 export async function reportData() {
-  const monthly = await query<{ month: string; category: string; expense_count: number; total_amount: number }[]>(
-    `SELECT * FROM v_monthly_expense_totals ORDER BY month DESC, category LIMIT 36`
-  );
-  const vehicleCosts = await query<Record<string, unknown>[]>(
-    `SELECT id,registration_number,vehicle_type,maintenance_total,expense_total,
-      RANK() OVER (ORDER BY (maintenance_total + expense_total) DESC) AS cost_rank
-     FROM (
-       SELECT v.id,v.registration_number,v.vehicle_type,
-         COALESCE(m.maintenance_total,0) AS maintenance_total,
-         fn_vehicle_expense_total(v.id) AS expense_total
-       FROM vehicles v LEFT JOIN (
-         SELECT vehicle_id,SUM(cost) AS maintenance_total FROM maintenance_records GROUP BY vehicle_id
-       ) m ON m.vehicle_id=v.id
-     ) vehicle_totals
-     ORDER BY cost_rank,registration_number`
-  );
-  const delayedShipments = await query<Record<string, unknown>[]>(
-    `SELECT s.id,s.tracking_number,s.customer_name,s.origin,s.destination,s.expected_delivery,s.status
-     FROM shipments s WHERE s.status IN ('delayed','in_transit') AND s.expected_delivery < CURRENT_TIMESTAMP
-       AND EXISTS (SELECT 1 FROM trip_shipments ts JOIN trips t ON t.id=ts.trip_id WHERE ts.shipment_id=s.id AND t.status IN ('assigned','in_progress'))
-     ORDER BY s.expected_delivery LIMIT 100`
-  );
-  const incidentText = await query<Record<string, unknown>[]>(
-    `SELECT i.id,i.summary,i.severity,i.embedding_status,
-      COUNT(im.incident_id) AS has_image
-     FROM incidents i LEFT JOIN incident_images im ON im.incident_id=i.id
-     GROUP BY i.id ORDER BY i.occurred_at DESC LIMIT 20`
-  );
-  const statusChains = await query<Record<string, unknown>[]>(
-    `WITH RECURSIVE status_chain AS (
-       SELECT h.id, h.shipment_id, s.tracking_number, h.old_status, h.new_status, h.changed_at,
-              1 AS step_no, CAST(h.new_status AS CHAR(200)) AS transition_path
-       FROM shipment_status_history h
-       JOIN shipments s ON s.id = h.shipment_id
-       WHERE h.old_status IS NULL
-       UNION ALL
-       SELECT next_h.id, next_h.shipment_id, sc.tracking_number, next_h.old_status, next_h.new_status, next_h.changed_at,
-              sc.step_no + 1, CONCAT(sc.transition_path, ' -> ', next_h.new_status)
-       FROM shipment_status_history next_h
-       JOIN status_chain sc ON next_h.shipment_id = sc.shipment_id
-         AND next_h.old_status = sc.new_status
-         AND next_h.id > sc.id
-       WHERE sc.step_no < 10
-     )
-     SELECT id, shipment_id, tracking_number, step_no, transition_path, changed_at
-     FROM status_chain
-     ORDER BY shipment_id, step_no
-     LIMIT 30`
-  );
+  const [monthly, vehicleCosts, delayedShipments, incidentText, statusChains] = await Promise.all([
+    query<{ month: string; category: string; expense_count: number; total_amount: number }[]>(
+      `SELECT * FROM v_monthly_expense_totals ORDER BY month DESC, category LIMIT 36`
+    ),
+    query<Record<string, unknown>[]>(
+      `SELECT id,registration_number,vehicle_type,maintenance_total,expense_total,
+        RANK() OVER (ORDER BY (maintenance_total + expense_total) DESC) AS cost_rank
+       FROM (
+         SELECT v.id,v.registration_number,v.vehicle_type,
+           COALESCE(m.maintenance_total,0) AS maintenance_total,
+           fn_vehicle_expense_total(v.id) AS expense_total
+         FROM vehicles v LEFT JOIN (
+           SELECT vehicle_id,SUM(cost) AS maintenance_total FROM maintenance_records GROUP BY vehicle_id
+         ) m ON m.vehicle_id=v.id
+       ) vehicle_totals
+       ORDER BY cost_rank,registration_number`
+    ),
+    query<Record<string, unknown>[]>(
+      `SELECT s.id,s.tracking_number,s.customer_name,s.origin,s.destination,s.expected_delivery,s.status
+       FROM shipments s WHERE s.status IN ('delayed','in_transit') AND s.expected_delivery < CURRENT_TIMESTAMP
+         AND EXISTS (SELECT 1 FROM trip_shipments ts JOIN trips t ON t.id=ts.trip_id WHERE ts.shipment_id=s.id AND t.status IN ('assigned','in_progress'))
+       ORDER BY s.expected_delivery LIMIT 100`
+    ),
+    query<Record<string, unknown>[]>(
+      `SELECT i.id,i.summary,i.severity,i.embedding_status,
+        COUNT(im.incident_id) AS has_image
+       FROM incidents i LEFT JOIN incident_images im ON im.incident_id=i.id
+       GROUP BY i.id ORDER BY i.occurred_at DESC LIMIT 20`
+    ),
+    query<Record<string, unknown>[]>(
+      `WITH RECURSIVE status_chain AS (
+         SELECT h.id, h.shipment_id, s.tracking_number, h.old_status, h.new_status, h.changed_at,
+                1 AS step_no, CAST(h.new_status AS CHAR(200)) AS transition_path
+         FROM shipment_status_history h
+         JOIN shipments s ON s.id = h.shipment_id
+         WHERE h.old_status IS NULL
+         UNION ALL
+         SELECT next_h.id, next_h.shipment_id, sc.tracking_number, next_h.old_status, next_h.new_status, next_h.changed_at,
+                sc.step_no + 1, CONCAT(sc.transition_path, ' -> ', next_h.new_status)
+         FROM shipment_status_history next_h
+         JOIN status_chain sc ON next_h.shipment_id = sc.shipment_id
+           AND next_h.old_status = sc.new_status
+           AND next_h.id > sc.id
+         WHERE sc.step_no < 10
+       )
+       SELECT id, shipment_id, tracking_number, step_no, transition_path, changed_at
+       FROM status_chain
+       ORDER BY shipment_id, step_no
+       LIMIT 30`
+    )
+  ]);
   return { monthly, vehicleCosts, delayedShipments, incidentText, statusChains };
 }

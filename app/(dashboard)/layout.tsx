@@ -11,10 +11,8 @@ const navigation = [
   { href:'/drivers', label:'Drivers', icon:Users },
   { href:'/shipments', label:'Shipments', icon:Package },
   { href:'/trips', label:'Trips & assignments', icon:Route },
-  { href:'/maintenance', label:'Maintenance', icon:Wrench },
-  { href:'/expenses', label:'Expenses', icon:CircleDollarSign },
   { href:'/incidents', label:'Incidents', icon:AlertTriangle },
-  { href:'/similar-incidents', label:'Similar incidents', icon:Search },
+  { href:'/similar-incidents', label:'Vector search (pgvector)', icon:Search },
   { href:'/reports', label:'Reports', icon:BarChart3 }
 ];
 
