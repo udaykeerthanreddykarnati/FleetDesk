@@ -1,79 +1,103 @@
 # FleetDesk — Fleet and Logistics Management
 
-A local DBMS Level 3 project for managing vehicles, drivers, shipments, trips, maintenance, expenses, and incidents. MySQL is the source of truth for operational records. PostgreSQL with `pgvector` stores the 768-dimensional incident vector search index. An in-process deterministic Node.js semantic embedding engine generates 768-dimensional normalized embeddings directly in the backend — no external Ollama daemon or paid cloud AI service is required.
+A local DBMS Level 3 experiential learning project managing vehicles, drivers, shipments, trips, maintenance, expenses, and incidents. 
+
+- **MySQL** is the primary source of truth for all relational operations, binary image storage, transaction boundaries, triggers, and stored procedures.
+- **PostgreSQL (`pgvector`)** stores 768-dimensional normalized incident embeddings for semantic cosine similarity search.
+- **In-process Node.js embedding generator**: Embeddings are computed deterministically in-process in `backend/lib/vector.ts` (no external Ollama daemon or paid cloud AI required).
+
+---
+
+## Teammate & Evaluation Quick-Start
+
+If you just cloned this repository or need to run and explain the project for the viva:
+
+### 1. Run the project in 3 steps
+```sh
+# Step 1: Ensure MySQL and PostgreSQL are in your PATH
+export PATH="$(brew --prefix mysql)/bin:$(brew --prefix postgresql@18)/bin:$PATH"
+
+# Step 2: Start local MySQL (:3307) and PostgreSQL (:5433)
+./backend/scripts/start-local-databases.sh
+
+# Step 3: Start the Next.js web application
+npm run dev
+```
+Open **[http://localhost:3000](http://localhost:3000)** in your browser.
+
+- **Default Admin Account**:
+  - Email: `demo-admin@fleetdesk.local`
+  - Password: `admin12345678`
+
+---
+
+### 2. How to Explain the Project During the Viva (5 Key Demos)
+
+When the professor asks you to demonstrate your work, show these 5 screens:
+
+1. **Transactional Stored Procedure (`/trips`)**:
+   - Go to **Trips & assignments**. Click **Assign trip**.
+   - Behind the scenes, this executes [`sp_assign_trip`](backend/sql/mysql/002_programmability.sql) in MySQL using `START TRANSACTION`, `SELECT ... FOR UPDATE` row locks, capacity checks, and driver license expiry validation with automatic rollback on error.
+2. **PostgreSQL Vector Database & Cosine Search (`/similar-incidents`)**:
+   - Go to **Vector search (pgvector)**.
+   - Shows live PostgreSQL telemetry: `pgvector v0.8.7`, `VECTOR(768)`, and `HNSW Cosine Index`.
+   - Type a natural sentence (e.g., *"coolant leak and high engine temperature on highway"*) to demonstrate real-time nearest-neighbor retrieval using PostgreSQL's `<=>` cosine distance operator.
+3. **Triggers & Full-Text Search (`/shipments`)**:
+   - Search shipments using words like *"ceramic"* or *"electronics"* (runs MySQL `MATCH ... AGAINST` FULLTEXT search).
+   - Updating shipment statuses automatically fires audit triggers (`trg_shipments_history_after_update`), and trying to revert a delivered shipment triggers an exception (`trg_shipments_status_before_update`).
+4. **Complex Analytical Queries (`/reports`)**:
+   - Displays MySQL Views (`v_monthly_expense_totals`), Window Functions (`RANK() OVER` cost ranking), Correlated `EXISTS` subqueries, and a Recursive CTE (`WITH RECURSIVE status_chain`) tracing shipment status transition paths.
+5. **Real Binary Image Storage & RBAC**:
+   - Look at the **Vehicles**, **Shipments**, and **Incidents** tables. The images are stored directly in MySQL as `MEDIUMBLOB` bytes in dedicated tables (`vehicle_images`, `shipment_images`, `incident_images`).
+   - Logging in as `admin` unlocks the **User management** tab to manage operational staff accounts with salted `scrypt` password hashes.
+
+---
 
 ## Repository layout
 
-- `app/` — Next.js App Router pages and API route handlers (`/api/*`)
-- `frontend/` — React UI components (`frontend/components/`) and client utilities (`frontend/lib/`)
-- `backend/` — Database pools, SQL/pgvector query modules (`backend/lib/`), MySQL & PostgreSQL DDL/programmability scripts (`backend/sql/`), and local setup/seed scripts (`backend/scripts/`)
-- `docs/` — Architecture, ER diagram, data dictionary, runnable SQL examples, vector search guide, and testing results
+- `app/` — Next.js 16 App Router pages (`app/(dashboard)/`) and REST API route handlers (`app/api/*`).
+- `frontend/` — React UI components (`frontend/components/`) and client utilities (`frontend/lib/`).
+- `backend/`
+  - `backend/sql/mysql/` — Relational schema DDL (`001_schema.sql`) and programmability routines (`002_programmability.sql`).
+  - `backend/sql/postgres/` — Vector schema DDL with HNSW cosine index (`001_vector_schema.sql`).
+  - `backend/lib/` — Database connection pools (`db.ts`, `pg.ts`), query modules (`data.ts`), in-process vector embedding generator (`vector.ts`), and password hashing (`password.ts`).
+  - `backend/scripts/` — Automated local database setup (`setup-local.sh`, `start-local-databases.sh`, `seed.ts`).
+- `docs/` — Evaluation architecture, ER diagram, data dictionary, testing results, and runnable SQL queries (`docs/sql-examples.sql`).
 
-## Features
+## Stack
 
-- Dashboard totals, shipment status counts, recent incidents, and expense totals are queried from MySQL.
-- Management pages provide validated create, update, delete, search, and status workflows for fleet records.
-- Trip assignment calls a MySQL stored procedure (`sp_assign_trip`) that locks and validates the trip, vehicle, driver, and shipments before committing.
-- Shipment status triggers write an audit history (`shipment_status_history`) and prevent delivered shipments from reverting.
-- Vehicle, shipment, and incident images are saved as actual `MEDIUMBLOB` bytes in separate MySQL tables (`vehicle_images`, `shipment_images`, `incident_images`). The server accepts PNG, JPEG, WebP, and GIF files up to 5 MiB.
-- Incident descriptions are embedded in-process into 768-dimensional L2-normalized vectors (`backend/lib/vector.ts`), synchronized to PostgreSQL (`incident_vectors`) through a retryable MySQL outbox (`incident_vector_jobs`), and ranked using `pgvector` cosine distance (`<=>`).
-- Admin and Operations roles use scrypt password hashes and opaque server-side sessions. User management is Admin-only.
-- Searchable shipments use MySQL full-text indexing (`MATCH ... AGAINST`). Reports demonstrate views, a stored function (`fn_vehicle_expense_total`), joins, correlated subqueries, recursive CTEs (`WITH RECURSIVE`), aggregates, and a window function (`RANK() OVER`).
+- **Frontend**: Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS, Radix UI.
+- **Relational DB**: MySQL 9.7 Community Server (`127.0.0.1:3307`, db: `fleet_logistics`).
+- **Vector DB**: PostgreSQL 18 + `pgvector` (`127.0.0.1:5433`, db: `fleet_vectors`).
+- **Auth**: Salted `scrypt` password hashing + HTTP-only sessions with `admin` and `operations` RBAC.
+- **Testing**: Vitest for unit tests (`tests/core.test.ts`) and API integration tests (`tests/api.integration.test.ts`).
 
-## Stack and template
+## First-Time Setup Instructions (For New Machines)
 
-The interface reuses the Vercel Admin Dashboard template’s App Router layout, navigation, Tailwind setup, and shadcn-style components from [vercel/nextjs-postgres-nextauth-tailwindcss-template](https://github.com/vercel/nextjs-postgres-nextauth-tailwindcss-template). The template’s MIT license is retained in `LICENSE.md`. Its original PostgreSQL/Auth.js OAuth demo data path was removed; app authentication and operational access now use local MySQL sessions. PostgreSQL is reserved for `pgvector` incident search.
+If setting up on a completely fresh machine:
 
-- Next.js App Router, React, TypeScript, Tailwind CSS
-- MySQL Community Server for relational data, BLOB images, full-text search, and routines
-- PostgreSQL + `pgvector` for 768-dimensional embeddings and HNSW nearest-neighbor cosine search
-- Vitest for unit and local API integration tests
-
-## Local setup (macOS + Homebrew)
-
-The checked-in setup scripts target a local Homebrew MySQL and PostgreSQL installation. The app databases bind to loopback only and use their own project data directories and ports (`3307` and `5433`), so they do not require a cloud account or deployment.
-
-1. Install Homebrew if it is not already installed, then install the local runtimes:
-
+1. Install local runtimes via Homebrew:
    ```sh
    brew install node mysql postgresql@18 pgvector
    export PATH="$(brew --prefix mysql)/bin:$(brew --prefix postgresql@18)/bin:$PATH"
-   node --version
-   npm --version
    ```
 
-2. Open Terminal in the project directory and install JavaScript dependencies:
-
+2. Install dependencies:
    ```sh
    npm install
    ```
 
-3. Create the local environment, start the project-isolated databases, create both schemas, and seed the database + `pgvector` index:
-
+3. Initialize local databases and seed records:
    ```sh
    ./backend/scripts/setup-local.sh
    npm run db:seed
    npm run db:sync-vectors
    ```
 
-   `setup-local.sh` creates a random `.env.local` with mode `600` if one does not exist. It initializes MySQL on `127.0.0.1:3307`, PostgreSQL on `127.0.0.1:5433`, grants the local `fleet_app` user access to the project databases, and loads `backend/sql/mysql/001_schema.sql`, `backend/sql/mysql/002_programmability.sql`, and `backend/sql/postgres/001_vector_schema.sql`. Seed data inserts 10 vehicles, 10 drivers, 10 shipments, 10 incidents, and 30 real `MEDIUMBLOB` images, and is idempotent.
-
-4. Create the first Admin. Replace the example name, email, and password with your own values (at least 12 characters):
-
-   ```sh
-   FLEET_ADMIN_PASSWORD='replace-with-your-own-12-character-password' \
-     npm run admin:create -- --name "Fleet Administrator" --email admin@example.local
-   ```
-
-   The password is salted and hashed with scrypt before it is inserted. This one-time command refuses to run after any account exists; later accounts are managed on the Admin-only **User management** page.
-
-5. Start the app:
-
+4. Start the app:
    ```sh
    npm run dev
    ```
-
-   Open [http://localhost:3000](http://localhost:3000) and sign in with the Admin account. MySQL and PostgreSQL run as local processes after the setup script starts them.
 
 ### Stop and restart
 
