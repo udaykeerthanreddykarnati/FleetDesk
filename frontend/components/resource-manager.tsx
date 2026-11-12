@@ -71,9 +71,21 @@ export function ResourceManager({title,description,endpoint,fields,columns,rows,
       {!rows.some((row)=>row.status==='planned')&&<p className="text-sm text-slate-500">No planned trips are waiting for assignment.</p>}
     </CardContent></Card>}
     <Card><CardHeader className="flex-row items-center justify-between gap-4"><div><CardTitle className="text-lg">Records</CardTitle><CardDescription>{shown.length} of {rows.length} records</CardDescription></div><label className="relative w-full max-w-xs"><Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400"/><Input value={filter} onChange={(event)=>setFilter(event.target.value)} placeholder="Filter these records" className="pl-9" aria-label="Filter records" /></label></CardHeader><CardContent className="px-0 sm:px-6">
-      {shown.length===0?<p className="px-6 py-10 text-center text-sm text-slate-500">{filter?'No records match that filter.':emptyMessage}</p>:<div className="overflow-x-auto"><Table><TableHeader><TableRow>{columns.map((column)=><TableHead key={column.key} className="whitespace-nowrap">{column.label}</TableHead>)}{imageEntity&&<TableHead>Photo</TableHead>}{status&&<TableHead>Update status</TableHead>}{tripAssignment&&<TableHead>Assignment</TableHead>}{isAdmin&&<TableHead>Actions</TableHead>}</TableRow></TableHeader><TableBody>
+      {shown.length===0?<p className="px-6 py-10 text-center text-sm text-slate-500">{filter?'No records match that filter.':emptyMessage}</p>:<div className="overflow-x-auto"><Table className="min-w-[1050px]"><TableHeader><TableRow>{columns.map((column)=><TableHead key={column.key} className="whitespace-nowrap">{column.label}</TableHead>)}{imageEntity&&<TableHead>Photo</TableHead>}{status&&<TableHead>Update status</TableHead>}{tripAssignment&&<TableHead>Assignment</TableHead>}{isAdmin&&<TableHead>Actions</TableHead>}</TableRow></TableHeader><TableBody>
         {shown.map((row)=><TableRow key={String(row.id)} id={title==='Incidents'?`incident-${row.id}`:undefined}>
-          {columns.map((column)=><TableCell key={column.key} className="max-w-64 whitespace-nowrap text-sm">{column.key==='status'||column.key==='incident_status'||column.key==='severity'?<span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs capitalize text-slate-700">{display(row[column.key])}</span>:display(row[column.key])}</TableCell>)}
+          {columns.map((column)=>{
+            const isLongText = column.key==='description'||column.key==='notes';
+            const cellClass = isLongText ? 'min-w-[220px] max-w-[320px] text-sm break-words whitespace-normal leading-snug' : 'whitespace-nowrap text-sm';
+            return (
+              <TableCell key={column.key} className={cellClass}>
+                {column.key==='status'||column.key==='incident_status'||column.key==='severity' ? (
+                  <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs capitalize text-slate-700">{display(row[column.key])}</span>
+                ) : (
+                  display(row[column.key])
+                )}
+              </TableCell>
+            );
+          })}
           {imageEntity&&<TableCell><ImageManager entity={imageEntity} id={Number(row.id)} hasImage={Boolean(Number(row.has_image))} onError={setError} onDone={()=>{setNotice('Photo updated successfully.');router.refresh();}} /></TableCell>}
           {status&&<TableCell><select aria-label={`Set status for record ${row.id}`} value={String(row[status.field]||'')} onChange={(event)=>void changeStatus(row,event.target.value)} className="h-9 rounded-md border border-slate-200 bg-white px-2 text-xs capitalize">{status.options.map((option)=><option key={option.value} value={option.value}>{option.label}</option>)}</select></TableCell>}
           {tripAssignment&&<TableCell>{row.status==='planned'?<span className="text-xs text-amber-700">Needs vehicle + driver</span>:<span className="text-xs text-emerald-700">{display(row.registration_number)} · {display(row.driver_name)}</span>}</TableCell>}
