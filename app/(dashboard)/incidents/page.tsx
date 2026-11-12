@@ -22,14 +22,14 @@ export default async function IncidentsPage(){
         <div className="flex items-center gap-3">
           <span className="rounded-lg bg-emerald-100 p-2 text-emerald-800"><Database className="h-5 w-5"/></span>
           <div>
-            <h3 className="text-sm font-semibold text-emerald-950">PostgreSQL Vector Sync Outbox</h3>
-            <p className="text-xs text-emerald-800">Operational incident records are stored in MySQL, while 768-dimensional embeddings are synchronized to PostgreSQL pgvector.</p>
+            <h3 className="text-sm font-semibold text-emerald-950">Incident Search Index</h3>
+            <p className="text-xs text-emerald-800">Synchronize incident reports with the search index to find recurring breakdown patterns and matching resolutions.</p>
           </div>
         </div>
         <div className="flex items-center gap-3">
           <VectorSyncButton/>
           <Link href="/similar-incidents" className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-700 px-3 py-2 text-xs font-medium text-white hover:bg-emerald-800 transition">
-            Open Semantic Search <ArrowRight className="h-3.5 w-3.5"/>
+            Search Similar Incidents <ArrowRight className="h-3.5 w-3.5"/>
           </Link>
         </div>
       </div>
