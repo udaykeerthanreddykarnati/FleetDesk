@@ -9,7 +9,7 @@ type Match={id:number;summary:string;severity:string;incident_status:string;occu
 export function SimilarIncidentSearch(){
   const [results,setResults]=useState<Match[]|null>(null);const [busy,setBusy]=useState(false);const [error,setError]=useState('');const [syncNote,setSyncNote]=useState('');
   async function search(event:FormEvent<HTMLFormElement>){event.preventDefault();const form=new FormData(event.currentTarget);const query=String(form.get('query')||'').trim();setBusy(true);setError('');setSyncNote('');setResults(null);
-    try{const response=await fetch('/api/incidents/search',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({query,limit:8})});const data=await response.json();if(!response.ok)throw new Error(data.error||'Search failed.');setResults(data.results);if(data.sync?.failed)setSyncNote(`${data.sync.failed} incident embedding(s) need a retry; existing indexed results are shown.`);}
+    try{const response=await fetch('/api/incidents/search',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({query,limit:8})});const data=await response.json();if(!response.ok)throw new Error(data.error||'Search failed.');setResults(data.results);if(data.sync?.failed)setSyncNote(`${data.sync.failed} incident(s) pending search indexing; existing results shown.`);}
     catch(cause){setError(cause instanceof Error?cause.message:'Search is unavailable.');}
     finally{setBusy(false);}
   }
@@ -20,6 +20,6 @@ export function SimilarIncidentSearch(){
 }
 
 export function VectorSyncButton(){const[busy,setBusy]=useState(false);const[note,setNote]=useState('');const[error,setError]=useState('');
-  async function run(){setBusy(true);setNote('');setError('');try{const response=await fetch('/api/incidents/sync',{method:'POST'});const data=await response.json();if(!response.ok)throw new Error(data.error||'Sync retry failed.');setNote(`Synced ${data.sync.synced}; failed ${data.sync.failed}; jobs remaining ${data.sync.remaining}.`);}catch(cause){setError(cause instanceof Error?cause.message:'Sync retry failed.');}finally{setBusy(false);}}
-  return <div className="flex flex-wrap items-center gap-3"><Button variant="outline" disabled={busy} onClick={()=>void run()}>{busy?'Retrying…':'Retry vector synchronization'}</Button>{note&&<span role="status" className="text-sm text-emerald-800">{note}</span>}{error&&<span role="alert" className="text-sm text-red-700">{error}</span>}</div>;
+  async function run(){setBusy(true);setNote('');setError('');try{const response=await fetch('/api/incidents/sync',{method:'POST'});const data=await response.json();if(!response.ok)throw new Error(data.error||'Sync retry failed.');setNote(`Synced ${data.sync.synced}; failed ${data.sync.failed}; remaining ${data.sync.remaining}.`);}catch(cause){setError(cause instanceof Error?cause.message:'Sync failed.');}finally{setBusy(false);}}
+  return <div className="flex flex-wrap items-center gap-3"><Button variant="outline" disabled={busy} onClick={()=>void run()}>{busy?'Updating index…':'Refresh search index'}</Button>{note&&<span role="status" className="text-sm text-emerald-800">{note}</span>}{error&&<span role="alert" className="text-sm text-red-700">{error}</span>}</div>;
 }

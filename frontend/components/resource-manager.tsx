@@ -66,15 +66,15 @@ export function ResourceManager({title,description,endpoint,fields,columns,rows,
       </form>
       {error&&<p role="alert" className="mt-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}{notice&&<p role="status" className="mt-4 rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-800">{notice}</p>}
     </CardContent></Card>
-    {tripAssignment&&<Card><CardHeader><CardTitle className="text-lg">Assign a planned trip</CardTitle><CardDescription>Assignment is handled in a MySQL transaction and locks the selected vehicle and driver.</CardDescription></CardHeader><CardContent className="grid gap-3 sm:grid-cols-2">
+    {tripAssignment&&<Card><CardHeader><CardTitle className="text-lg">Assign a planned trip</CardTitle><CardDescription>Select an available vehicle and active driver for this scheduled route.</CardDescription></CardHeader><CardContent className="grid gap-3 sm:grid-cols-2">
       {rows.filter((row)=>row.status==='planned').map((trip)=><TripAssignment key={String(trip.id)} trip={trip} vehicles={tripAssignment.vehicles} drivers={tripAssignment.drivers} onError={setError} onDone={()=>{setNotice('Trip assignment saved.');router.refresh();}} />)}
       {!rows.some((row)=>row.status==='planned')&&<p className="text-sm text-slate-500">No planned trips are waiting for assignment.</p>}
     </CardContent></Card>}
-    <Card><CardHeader className="flex-row items-center justify-between gap-4"><div><CardTitle className="text-lg">Records</CardTitle><CardDescription>{shown.length} shown · {rows.length} in MySQL</CardDescription></div><label className="relative w-full max-w-xs"><Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400"/><Input value={filter} onChange={(event)=>setFilter(event.target.value)} placeholder="Filter these records" className="pl-9" aria-label="Filter records" /></label></CardHeader><CardContent className="px-0 sm:px-6">
-      {shown.length===0?<p className="px-6 py-10 text-center text-sm text-slate-500">{filter?'No records match that filter.':emptyMessage}</p>:<div className="overflow-x-auto"><Table><TableHeader><TableRow>{columns.map((column)=><TableHead key={column.key} className="whitespace-nowrap">{column.label}</TableHead>)}{imageEntity&&<TableHead>Image in MySQL</TableHead>}{status&&<TableHead>Update status</TableHead>}{tripAssignment&&<TableHead>Assignment</TableHead>}{isAdmin&&<TableHead>Actions</TableHead>}</TableRow></TableHeader><TableBody>
+    <Card><CardHeader className="flex-row items-center justify-between gap-4"><div><CardTitle className="text-lg">Records</CardTitle><CardDescription>{shown.length} of {rows.length} records</CardDescription></div><label className="relative w-full max-w-xs"><Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400"/><Input value={filter} onChange={(event)=>setFilter(event.target.value)} placeholder="Filter these records" className="pl-9" aria-label="Filter records" /></label></CardHeader><CardContent className="px-0 sm:px-6">
+      {shown.length===0?<p className="px-6 py-10 text-center text-sm text-slate-500">{filter?'No records match that filter.':emptyMessage}</p>:<div className="overflow-x-auto"><Table><TableHeader><TableRow>{columns.map((column)=><TableHead key={column.key} className="whitespace-nowrap">{column.label}</TableHead>)}{imageEntity&&<TableHead>Photo</TableHead>}{status&&<TableHead>Update status</TableHead>}{tripAssignment&&<TableHead>Assignment</TableHead>}{isAdmin&&<TableHead>Actions</TableHead>}</TableRow></TableHeader><TableBody>
         {shown.map((row)=><TableRow key={String(row.id)} id={title==='Incidents'?`incident-${row.id}`:undefined}>
           {columns.map((column)=><TableCell key={column.key} className="max-w-64 whitespace-nowrap text-sm">{column.key==='status'||column.key==='incident_status'||column.key==='severity'?<span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs capitalize text-slate-700">{display(row[column.key])}</span>:display(row[column.key])}</TableCell>)}
-          {imageEntity&&<TableCell><ImageManager entity={imageEntity} id={Number(row.id)} hasImage={Boolean(Number(row.has_image))} onError={setError} onDone={()=>{setNotice('Image bytes saved in MySQL.');router.refresh();}} /></TableCell>}
+          {imageEntity&&<TableCell><ImageManager entity={imageEntity} id={Number(row.id)} hasImage={Boolean(Number(row.has_image))} onError={setError} onDone={()=>{setNotice('Photo updated successfully.');router.refresh();}} /></TableCell>}
           {status&&<TableCell><select aria-label={`Set status for record ${row.id}`} value={String(row[status.field]||'')} onChange={(event)=>void changeStatus(row,event.target.value)} className="h-9 rounded-md border border-slate-200 bg-white px-2 text-xs capitalize">{status.options.map((option)=><option key={option.value} value={option.value}>{option.label}</option>)}</select></TableCell>}
           {tripAssignment&&<TableCell>{row.status==='planned'?<span className="text-xs text-amber-700">Needs vehicle + driver</span>:<span className="text-xs text-emerald-700">{display(row.registration_number)} · {display(row.driver_name)}</span>}</TableCell>}
           {isAdmin&&<TableCell><Button variant="ghost" size="sm" className="text-red-700 hover:text-red-800" onClick={()=>void remove(row)}><Trash2 className="mr-1 h-4 w-4"/>Delete</Button></TableCell>}
@@ -112,14 +112,14 @@ function ImageManager({entity,id,hasImage,onError,onDone}:{entity:'vehicles'|'sh
   }
   async function remove() {
     setBusy(true);onError('');
-    try{const response=await fetch(`/api/images/${entity}/${id}`,{method:'DELETE'});if(!response.ok)throw new Error('Unable to delete the stored image.');onDone();}
-    catch(error){onError(error instanceof Error?error.message:'Unable to delete image.');}finally{setBusy(false);}
+    try{const response=await fetch(`/api/images/${entity}/${id}`,{method:'DELETE'});if(!response.ok)throw new Error('Unable to delete the stored photo.');onDone();}
+    catch(error){onError(error instanceof Error?error.message:'Unable to delete photo.');}finally{setBusy(false);}
   }
   return <div className="flex min-w-48 items-center gap-2">
-    {hasImage?<span className="relative block h-10 w-14 overflow-hidden rounded-md border border-slate-200"><Image src={`/api/images/${entity}/${id}`} alt={`${entity} ${id}`} fill sizes="56px" unoptimized className="object-cover"/></span>:<span className="grid h-10 w-14 place-items-center rounded-md bg-slate-100 text-[10px] text-slate-400">No image</span>}
+    {hasImage?<span className="relative block h-10 w-14 overflow-hidden rounded-md border border-slate-200"><Image src={`/api/images/${entity}/${id}`} alt={`${entity} ${id}`} fill sizes="56px" unoptimized className="object-cover"/></span>:<span className="grid h-10 w-14 place-items-center rounded-md bg-slate-100 text-[10px] text-slate-400">No photo</span>}
     <input ref={input} type="file" accept="image/png,image/jpeg,image/webp,image/gif" onChange={(event)=>void choose(event)} className="sr-only" />
     <Button type="button" variant="outline" size="sm" disabled={busy} onClick={()=>input.current?.click()}><Upload className="mr-1 h-3.5 w-3.5"/>{hasImage?'Replace':'Upload'}</Button>
     {entity==='vehicles'&&!hasImage&&<Button type="button" variant="ghost" size="sm" disabled={busy} onClick={()=>void sample()}>Sample</Button>}
-    {hasImage&&<Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-slate-500" disabled={busy} onClick={()=>void remove()} aria-label="Delete image"><X className="h-4 w-4"/></Button>}
+    {hasImage&&<Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-slate-500" disabled={busy} onClick={()=>void remove()} aria-label="Delete photo"><X className="h-4 w-4"/></Button>}
   </div>;
 }

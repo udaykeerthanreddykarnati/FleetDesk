@@ -16,5 +16,5 @@ export default async function TripsPage(){
     query<{id:number;full_name:string}[]>('SELECT id,full_name FROM drivers WHERE status=\'available\' AND license_expires_on>=CURRENT_DATE ORDER BY full_name')
   ]);
   const vehicleOptions:FieldOption[]=vehicles.map((row)=>({value:row.id,label:row.registration_number}));const driverOptions=drivers.map((row)=>({value:row.id,label:row.full_name}));
-  return <ResourceManager title="Trips & assignments" description="Plan trips, attach shipments, then assign an available vehicle and licensed driver in one locked MySQL transaction." endpoint="/api/trips" fields={fields} columns={columns} rows={rows} status={{field:'status',options:['planned','assigned','in_progress','completed','cancelled'].map((value)=>({value,label:value.replace('_',' ')}))}} isAdmin={user?.role==='admin'} tripAssignment={{vehicles:vehicleOptions,drivers:driverOptions}}/>;
+  return <ResourceManager title="Trips & assignments" description="Plan trips, attach shipments, and assign an available fleet vehicle with a qualified driver." endpoint="/api/trips" fields={fields} columns={columns} rows={rows} status={{field:'status',options:['planned','assigned','in_progress','completed','cancelled'].map((value)=>({value,label:value.replace('_',' ')}))}} isAdmin={user?.role==='admin'} tripAssignment={{vehicles:vehicleOptions,drivers:driverOptions}}/>;
 }
