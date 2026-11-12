@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { pool } from '../lib/db';
 import { imageMimeFromBytes } from '../lib/image-validation';
+import { hashPassword } from '../lib/password';
 import type { RowDataPacket } from 'mysql2';
 
 function loadSeedImage(relativePath: string) {
@@ -148,6 +149,22 @@ async function main() {
       [incidentRowId, img.filename, img.mime, img.size, img.bytes, imageDesc]
     );
   }
-  console.log('Seeded 10 vehicles, 10 drivers, 10 shipments, 10 incidents, and 30 real MySQL MEDIUMBLOB images.');
+  const adminHash = await hashPassword('admin12345678');
+  await pool.execute(
+    `INSERT INTO users (full_name, email, password_hash, role, is_active)
+     VALUES ('FleetDesk Demo Admin', 'demo-admin@fleetdesk.local', ?, 'admin', 1)
+     ON DUPLICATE KEY UPDATE password_hash=VALUES(password_hash), role='admin'`,
+    [adminHash]
+  );
+
+  const opsHash = await hashPassword('operations1234');
+  await pool.execute(
+    `INSERT INTO users (full_name, email, password_hash, role, is_active)
+     VALUES ('Fleet Operations Staff', 'demo-ops@fleetdesk.local', ?, 'operations', 1)
+     ON DUPLICATE KEY UPDATE password_hash=VALUES(password_hash), role='operations'`,
+    [opsHash]
+  );
+
+  console.log('Seeded 10 vehicles, 10 drivers, 10 shipments, 10 incidents, 30 real MySQL MEDIUMBLOB images, and default Admin/Operations accounts.');
 }
 main().catch((error) => { console.error(error); process.exitCode=1; }).finally(() => pool.end());

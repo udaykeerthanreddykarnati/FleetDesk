@@ -25,9 +25,15 @@ npm run dev
 ```
 Open **[http://localhost:3000](http://localhost:3000)** in your browser.
 
-- **Default Admin Account**:
-  - Email: `demo-admin@fleetdesk.local`
-  - Password: `admin12345678`
+- **Default Accounts (2 Roles)**:
+  - **Admin Role**:
+    - Email: `demo-admin@fleetdesk.local`
+    - Password: `admin12345678`
+    - Permissions: Full fleet management + **User Management (`/users`)** + Delete permissions.
+  - **Operations Role**:
+    - Email: `demo-ops@fleetdesk.local`
+    - Password: `operations1234`
+    - Permissions: Fleet management, dispatching, and incident reporting (User Management is restricted with `403 Forbidden`).
 
 ---
 
