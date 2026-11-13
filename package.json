@@ -11,6 +11,8 @@
     "test": "vitest run",
     "db:seed": "node --env-file=.env.local --conditions=react-server --import tsx backend/scripts/seed.ts",
     "db:sync-vectors": "node --env-file=.env.local --conditions=react-server --import tsx backend/scripts/sync-vectors.ts",
+    "db:mysql": "mysql -h 127.0.0.1 -P 3307 -u root fleet_logistics",
+    "db:psql": "psql -h 127.0.0.1 -p 5433 -U postgres -d fleet_vectors",
     "admin:create": "node --env-file=.env.local --conditions=react-server --import tsx backend/scripts/create-admin.ts",
     "test:integration": "node --env-file=.env.local --conditions=react-server ./node_modules/vitest/vitest.mjs run --config vitest.integration.config.mts"
   },
